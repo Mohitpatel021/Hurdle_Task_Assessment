@@ -22,10 +22,10 @@ export class CourseService {
   }
 
   // Get all courses with optional search
-  getAllCourses(search: string = '', page: number = 0, size: number = 7): Observable<any> {
+  getAllCourses(search: string = '', page: number, size: number): Observable<any> {
     if (search === null || search === '') {
       return this.http
-        .get(`${this.apiUrl}/get/all?page=${page}&size=${size}`)
+        .get(`${this.apiUrl}/get/all?pageNumber=${page}&PageSize=${size}`)
         .pipe(catchError(this.handleError));
     }
     return this.http
@@ -60,4 +60,6 @@ export class CourseService {
     }
     return throwError(errorMessage);
   }
+
+
 }

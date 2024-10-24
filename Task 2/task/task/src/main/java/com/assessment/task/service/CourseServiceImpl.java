@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -41,7 +42,7 @@ public class CourseServiceImpl {
 
 		CoursesEntity course = new CoursesEntity();
 		course.setCourseName(courseRequest.getTitle());
-		course.setCourseDuration(CourseDuration.TWELVE_MONTH);
+		course.setCourseDuration(courseRequest.getDuration());
 		course.setDescription(courseRequest.getDescription());
 		course.setCourseDuration(courseRequest.getDuration());
 		course.setAuthorName(courseRequest.getWriter());
@@ -95,25 +96,8 @@ public class CourseServiceImpl {
 		}
 	}
 
-	/**
-	 * Validates the course request to ensure required fields are present.
-	 *
-	 * @param courseRequest the course DTO.
-	 */
-	private void validateCourseRequest(CourseDTO courseRequest) {
-		if (courseRequest == null) {
-			throw new IllegalArgumentException("Course request cannot be null");
-		}
 
-		if (!StringUtils.hasText(courseRequest.getTitle())) {
-			throw new IllegalArgumentException("Course title must not be empty");
-		}
 
-		if (!StringUtils.hasText(courseRequest.getDescription())) {
-			throw new IllegalArgumentException("Course description must not be empty");
-		}
-
-	}
 
 	@Transactional
 	public CoursesEntity updateCourse(Long id, CourseUpdateDto courseUpdateDto) {
@@ -121,7 +105,6 @@ public class CourseServiceImpl {
 		if (optionalCourse.isEmpty()) {
 			throw new ResourceNotFoundException("Course not found with id " + id);
 		}
-
 		CoursesEntity existingCourse = optionalCourse.get();
 
 		// Only update fields that are present in the DTO
@@ -131,7 +114,7 @@ public class CourseServiceImpl {
 		if (courseUpdateDto.getAuthorName() != null && !courseUpdateDto.getAuthorName().isEmpty()) {
 			existingCourse.setAuthorName(courseUpdateDto.getAuthorName());
 		}
-
+		
 		if (courseUpdateDto.getDescription() != null && !courseUpdateDto.getDescription().isEmpty()) {
 			existingCourse.setDescription(courseUpdateDto.getDescription());
 		}
@@ -157,11 +140,12 @@ public class CourseServiceImpl {
 	}
 
 	@Transactional
-	public void deleteCoursesByIds(List<Long> courseIds) {
+	public ResponseEntity<?> deleteCoursesByIds(List<Long> courseIds) {
 		for (Long courseId : courseIds) {
 			CoursesEntity course = courseRepository.findById(courseId).orElseThrow(
 					() -> new ResourceNotFoundException("Course with ID " + courseId + " does not exist."));
 			courseRepository.delete(course);
 		}
+		return ResponseEntity.ok().body("Courses Deleted Successfully !!");
 	}
 }

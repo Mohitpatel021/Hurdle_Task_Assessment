@@ -21,18 +21,29 @@ export class DashboardComponent implements OnInit {
   selectedCourseIds: number[] = [];
   updateUserForm: FormGroup;
   addCourse: FormGroup;
+  searchQuery: string = ''
+  selectedAllCourseIds: number[] = [];
+  isAllSelected = false;
+  currentPage: number = 0;
+  pageSize: number = 9;
+  totalPages: number = 0;
+  totalItems: number = 0;
+  pageNumber: number = 0
+  pagesArray: number[] = [];
   constructor(private courseService: CourseService, private fb: FormBuilder) {
     this.updateUserForm = this.fb.group({
       courseName: [''],
       mentorName: [''],
       authorName: [''],
-      description: ['']
+      description: [''],
+      timeline: ['']
     });
     this.addCourse = this.fb.group({
       title: ['', Validators.required],
       mentor: ['', Validators.required],
       author: ['', Validators.required],
-      des: ['', Validators.required]
+      des: ['', Validators.required],
+      duration: ['']
     });
   }
 
@@ -40,16 +51,28 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadCourses();
   }
-
   loadCourses(): void {
-    this.courseService.getAllCourses().subscribe(
+    this.courseService.getAllCourses(this.searchQuery, this.pageNumber, this.pageSize).subscribe(
       (response) => {
         this.courses = response.content;
+        this.currentPage = response.currentPage;
+        this.totalPages = response.totalPages;
+        this.totalItems = response.totalItems;
+        this.pagesArray = Array.from({ length: this.totalPages }, (_, i) => i);
       },
       (error) => {
         this.errorMessage = 'Error loading courses: ' + error;
       }
     );
+  }
+  searchCourses(): void {
+    this.loadCourses();
+  }
+
+  // Reset search and load all courses
+  resetSearch(): void {
+    this.searchQuery = '';
+    this.loadCourses();
   }
 
   // Create Course
@@ -59,8 +82,8 @@ export class DashboardComponent implements OnInit {
       mentor: this.addCourse.get('mentor')?.value,
       writer: this.addCourse.get('author')?.value,
       description: this.addCourse.get('des')?.value,
+      duration: this.addCourse.get('duration')?.value
     };
-
     this.courseService.createCourse(updateData).subscribe(
       (response) => {
         this.closeaddModal();
@@ -96,16 +119,23 @@ export class DashboardComponent implements OnInit {
 
   // Delete multiple courses
   deleteSelectedCourses(): void {
-    this.courseService.deleteCoursesByIds(this.selectedCourseIds).subscribe(
-      (response) => {
-        this.successMessage = 'Selected courses deleted successfully!';
-        this.loadCourses();
-      },
-      (error) => {
-        this.errorMessage = 'Error deleting selected courses: ' + error;
-      }
-    );
+    if (this.selectedCourseIds.length > 0) {
+      this.courseService.deleteCoursesByIds(this.selectedCourseIds).subscribe(
+        (response) => {
+          this.successMessage = 'Selected courses deleted successfully!';
+          this.loadCourses();
+          this.selectedCourseIds = [];
+          this.isAllSelected = false;
+        },
+        (error) => {
+          this.errorMessage = 'Error deleting selected courses: ' + error;
+        }
+      );
+    } else {
+      this.errorMessage = 'No courses selected for deletion.';
+    }
   }
+
 
   // Modal management
   openDeleteModal(courseId: number): void {
@@ -142,7 +172,10 @@ export class DashboardComponent implements OnInit {
         mentorName: this.updateUserForm.get('mentorName')?.value,
         authorName: this.updateUserForm.get('authorName')?.value,
         description: this.updateUserForm.get('description')?.value,
+        duration: this.updateUserForm.get('timeline')?.value
       };
+      console.log(updateData.duration);
+
       this.courseService.updateCourse(this.updateCourseId, updateData).subscribe(
         (response) => {
           this.successMessage = 'Course updated successfully!';
@@ -156,7 +189,24 @@ export class DashboardComponent implements OnInit {
       );
     }
   }
+  goToPage(page: number): void {
+    if (page >= 0 && page < this.totalPages) {
+      this.pageNumber = page
+      this.loadCourses();
+    }
+  }
 
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.goToPage(this.currentPage + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 0) {
+      this.goToPage(this.currentPage - 1);
+    }
+  }
   // Close the update modal
   closeUpdateModal(): void {
     const modalElement = document.getElementById('subscribe-form-modal');
@@ -178,6 +228,44 @@ export class DashboardComponent implements OnInit {
     if (modalElement) {
       modalElement.classList.add('hidden');
       modalElement.classList.remove('flex');
+    }
+  }
+
+  toggleCourseSelection(courseId: number): void {
+    const selectedCourseIndex = this.selectedCourseIds.indexOf(courseId);
+    if (selectedCourseIndex > -1) {
+      this.selectedCourseIds.splice(selectedCourseIndex, 1);
+    } else {
+      this.selectedCourseIds.push(courseId);
+    }
+  }
+
+  selectAll(event: any): void {
+    this.isAllSelected = event.target.checked;
+    if (this.isAllSelected) {
+      this.selectedCourseIds = this.courses.map(course => course.courseId);
+    } else {
+      this.selectedCourseIds = [];
+    }
+    this.courses.forEach(course => {
+      course.selected = this.isAllSelected;
+    });
+  }
+
+  deleteSelectedAllCourses(): void {
+    if (this.selectedCourseIds.length > 0) {
+      this.courseService.deleteCoursesByIds(this.selectedCourseIds).subscribe(
+        (response) => {
+          this.successMessage = 'Selected courses deleted successfully!';
+          this.loadCourses();
+          this.selectedCourseIds = [];
+        },
+        (error) => {
+          this.errorMessage = 'Error deleting selected courses: ' + error;
+        }
+      );
+    } else {
+      this.errorMessage = 'No courses selected for deletion.';
     }
   }
 }

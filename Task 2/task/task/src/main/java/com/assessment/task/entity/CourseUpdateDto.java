@@ -5,7 +5,6 @@ public class CourseUpdateDto {
 	private String authorName;
 	private String description;
 	private String mentorName;
-
 	public String getCourseName() {
 		return courseName;
 	}
@@ -22,7 +21,6 @@ public class CourseUpdateDto {
 		this.authorName = authorName;
 	}
 
-
 	public String getDescription() {
 		return description;
 	}
@@ -38,5 +36,6 @@ public class CourseUpdateDto {
 	public void setMentorName(String mentorName) {
 		this.mentorName = mentorName;
 	}
+
 
 }

@@ -39,7 +39,7 @@ public class CourseController {
 
 	// Create course
 	@PostMapping("/create")
-	public ResponseEntity<Map<String, Object>> createCourse( @RequestBody CourseDTO courseRequest) {
+	public ResponseEntity<Map<String, Object>> createCourse(@RequestBody CourseDTO courseRequest) {
 
 		CoursesEntity savedCourse = courseService.saveCourse(courseRequest);
 		Map<String, Object> response = new HashMap<>();
@@ -82,7 +82,7 @@ public class CourseController {
 	@GetMapping("/get/all")
 	public ResponseEntity<?> getAllCourses(@RequestParam(name = "searchParam", required = false) String searchParam,
 			@RequestParam(name = "pageNumber", defaultValue = "0", required = false) int pageNumber,
-			@RequestParam(name = "PageSize", defaultValue = "10", required = false) int pageSize) {
+			@RequestParam(name = "PageSize", defaultValue = "9", required = false) int pageSize) {
 		try {
 			Pageable page = PageRequest.of(pageNumber, pageSize);
 			Page<CoursesEntity> courses = courseService.getAllCourses(searchParam, page);
@@ -96,7 +96,10 @@ public class CourseController {
 	public ResponseEntity<?> deleteCoursesByIds(@RequestBody List<Long> courseIds) {
 		try {
 			courseService.deleteCoursesByIds(courseIds);
-			return ResponseEntity.ok("Courses with the provided IDs have been deleted successfully.");
+			Map<String, String> response = new HashMap<>();
+			response.put("Message", "Courses Deleted Successfully !!");
+			response.put("Status", "OK");
+			return ResponseEntity.ok(response);
 		} catch (ResourceNotFoundException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		} catch (Exception e) {
